@@ -11,6 +11,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validation;
@@ -26,7 +27,7 @@ class PostController extends AbstractController
         ]);
     }
 
-    #[Route('/api/post/create', name: 'app_post_create', methods: ['POST'])]
+    #[Route('/api/admin/post/create', name: 'app_post_create', methods: ['POST'])]
     public function FunctionName(
         Request $request,
         PostCategoryRepository $postCategoryRepository,
@@ -38,7 +39,7 @@ class PostController extends AbstractController
         if ($validate) {
             return $this->json([
                 'errors' => $validate,
-            ]);
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         $post = new Post();
@@ -64,7 +65,7 @@ class PostController extends AbstractController
         ]);
     }
 
-    #[Route('/api/post/update/{id}', name: 'app_post_update', methods: ["PUT"])]
+    #[Route('/api/admin/post/update/{id}', name: 'app_post_update', methods: ["PUT"])]
     public function update(
         int $id,
         Request $request,
@@ -88,6 +89,30 @@ class PostController extends AbstractController
             'success' => 'Atualizado com sucesso.'
         ]);
     }
+		
+    #[Route('/api/admin/post/delete/{id}', name: 'app_post_delete', methods: ['DELETE'])]
+    public function delete(int $id, PostRepository $postRepository, EntityManagerInterface $em): JsonResponse
+    {
+        $post = $em->getPartialReference(Post::class, $id);
+        $postRepository->remove($post, true);
+        return $this->json([
+            'success' => 'Post deletado com sucesso.'
+        ]);
+    }
+
+	#[Route('/api/post/show/{id}', name: 'app_post_show', methods: ['GET'])]
+	public function show(int $id, PostRepository $postRepository): JsonResponse
+    {
+        $post = $postRepository->find($id);
+
+        if (!$post) {
+            return $this->json([
+                'error' => 'Post nao encontrado'
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        return $this->json($post);
+	}
 
     private function validateInput(array $input): string | bool
     {
@@ -97,7 +122,7 @@ class PostController extends AbstractController
             'title' => new Assert\Length(['max' => 255]),
             'description' => new Assert\Length(['max' => 255]),
             'categories' => new Assert\Type('array'),
-            'status' => ['draf', 'pubished'],
+            'status' => new Assert\Choice(['draft', 'published']),
             'content' => new Assert\Type('string'),
             'date' => new Assert\Date(),
         ]);
@@ -110,8 +135,6 @@ class PostController extends AbstractController
             return false;
         }
 
-        return $this->json([
-            'errors' => (string) $violation,
-        ]);
+        return (string) $violation;
     }
 }

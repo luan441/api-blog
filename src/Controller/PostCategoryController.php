@@ -8,11 +8,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class PostCategoryController extends AbstractController
 {
-    #[Route('/api/category/create', name: 'app_category_create')]
+    #[Route('/api/admin/category/create', name: 'app_category_create')]
     public function create(Request $request, PostCategoryRepository $postCategoryRepository): JsonResponse
     {
         if (!array_key_exists('name', $request->toArray())) {
@@ -36,11 +37,15 @@ class PostCategoryController extends AbstractController
     {
         $categories = $postCategoryRepository->findAll();
         return $this->json([
-            'categories' => array_map(fn (PostCategory $category) => ['id' => $category->getId(), 'name' => $category->getName()], $categories)
+            'categories' => array_map(fn (PostCategory $category) => [
+                'id' => $category->getId(),
+                'name' => $category->getName(),
+                'posts' => $category->getPosts()->toArray()
+            ], $categories)
         ]);
     }
 
-    #[Route('/api/category/delete/{id}', name: 'app_category_delete', methods: ['DELETE'])]
+    #[Route('/api/admin/category/delete/{id}', name: 'app_category_delete', methods: ['DELETE'])]
     public function delete(int $id, PostCategoryRepository $postCategoryRepository, EntityManagerInterface $em): JsonResponse
     {
         $category = $em->getPartialReference(PostCategory::class, $id);
@@ -50,7 +55,7 @@ class PostCategoryController extends AbstractController
         ]);
     }
 
-    #[Route('/api/category/update/{id}', name: 'app_category_update', methods: ['PUT'])]
+    #[Route('/api/admin/category/update/{id}', name: 'app_category_update', methods: ['PUT'])]
     public function update(
         int $id,
         PostCategoryRepository $postCategoryRepository,
@@ -79,4 +84,23 @@ class PostCategoryController extends AbstractController
             'success' => 'Categoria atualizada com sucesso.'
         ]);
     }
+
+
+	#[Route('/api/category/show/{id}', name: 'app_category_show', methods: ['GET'])]
+	public function show(int $id, PostCategoryRepository $postCategoryRepository): JsonResponse
+    {
+        $category = $postCategoryRepository->find($id);
+
+        if (!$category) {
+            return $this->json([
+                'error' => 'Post nao encontrado'
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        return $this->json([
+            'id' => $category->getId(),
+            'name' => $category->getName(),
+            'posts' => $category->getPosts()->toArray()
+        ]);
+	}
 }
