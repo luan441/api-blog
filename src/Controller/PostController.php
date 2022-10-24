@@ -131,7 +131,7 @@ class PostController extends AbstractController
 
         $violation = $validator->validate($input, $constraints, $group);
 
-        if (count($violation) > 0) {
+        if (count($violation) <= 0) {
             return false;
         }
 

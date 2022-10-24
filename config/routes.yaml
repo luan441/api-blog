@@ -1,3 +1,8 @@
 controllers:
     resource: ../src/Controller/
     type: attribute
+
+app_user_update:
+    path: /api/admin/user/update/{id}
+    controller: App\Controller\UserController::update
+    methods: PUT
