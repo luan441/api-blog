@@ -86,7 +86,7 @@ class UserController extends AbstractController
         ]);
     }
 
-    #[Route('/api/admin/user/show/{id}', name: 'app_user_update', methods: ['GET'])]
+    #[Route('/api/admin/user/show/{id}', name: 'app_user_show', methods: ['GET'])]
     public function show(
         int $id,
         UserRepository $userRepository,
